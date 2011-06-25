@@ -6,12 +6,13 @@ This cookbook will deploy node and npm (node package manager) to your system. It
 
 = REQUIREMENTS:
 
-* a working git framework (for example provided by Opscode git cookbook)
+* to install from source: a working git framework (for example provided by Opscode git cookbook)
 
 Tested on ubuntu. Should work on other system with upstart.
 
 = ATTRIBUTES:
 
+* node/install_from_source : If set to true, installs node from git, otherwise uses packages.
 * node/version : indicates which version to install. Default is the latest ('HEAD'). Since node evolves very quickly and is not always that stable, you might want to set it to a stable version (for example 'v0.4.3')
 
 = USAGE:

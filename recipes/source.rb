@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: node
-# Recipe:: default
+# Recipe:: source
 #
 # Copyright 2011, Tikibooth Limited
 #
@@ -17,13 +17,37 @@
 # limitations under the License.
 #
 
-if node[:node][:install_from_source]
-  include_recipe "node::source"
-else
-  case node[:platform]
-    when "debian","ubuntu"
-      package "nodejs"
-    else
-      log("Installing Node from packages is only supported under Ubuntu and Debian.") { level :error }
+include_recipe "git"
+
+[ "curl"].each do |pkg|
+  package pkg do
+    action :install
   end
 end
+
+case node[:platform]
+  when "centos","redhat","fedora"
+    package "openssl-devel"
+  when "debian","ubuntu"
+    package "libssl-dev"
+end
+
+bash "compile_nodejs_source" do
+  cwd "/tmp/"
+  code <<-EOH
+    git clone https://github.com/joyent/node.git
+    cd node
+    git checkout #{node[:node][:version]}
+    ./configure && make && make install
+  EOH
+end
+
+
+bash "install_npm" do
+  user "root"
+    cwd "/tmp/"
+    code <<-EOH
+    curl http://npmjs.org/install.sh | clean=no sh
+    EOH
+end
+
