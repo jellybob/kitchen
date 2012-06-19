@@ -32,13 +32,13 @@ package "debhelper"
 
 execute "build debian package" do
   command "dpkg-buildpackage -us -uc"
-  creates "/tmp/statsd_0.0.1_all.deb"
+  creates "/tmp/statsd_0.0.3_all.deb"
   cwd "/tmp/statsd"
 end
 
 dpkg_package "statsd" do
   action :install
-  source "/tmp/statsd_0.0.1_all.deb"
+  source "/tmp/statsd_0.0.3_all.deb"
 end
 
 template "/etc/statsd/rdioConfig.js" do
