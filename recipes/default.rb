@@ -24,21 +24,21 @@ package "nodejs"
 
 execute "checkout statsd" do
   command "git clone git://github.com/etsy/statsd"
-  creates "/tmp/statsd"
-  cwd "/tmp"
+  creates "#{node[:statsd][:tmp_dir]}/statsd"
+  cwd "#{node[:statsd][:tmp_dir]}"
 end
 
 package "debhelper"
 
 execute "build debian package" do
   command "dpkg-buildpackage -us -uc"
-  creates "/tmp/statsd_0.0.3_all.deb"
-  cwd "/tmp/statsd"
+  creates "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
+  cwd "#{node[:statsd][:tmp_dir]}/statsd"
 end
 
 dpkg_package "statsd" do
   action :install
-  source "/tmp/statsd_0.0.3_all.deb"
+  source "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
 end
 
 template "/etc/statsd/rdioConfig.js" do
@@ -63,7 +63,7 @@ cookbook_file "/etc/init/statsd.conf" do
   mode 0644
 end
 
-user "statsd" do
+user node[:statsd][:user] do
   comment "statsd"
   system true
   shell "/bin/false"
