@@ -22,18 +22,26 @@ include_recipe "git"
 
 package "nodejs"
 
-execute "checkout statsd" do
-  command "git clone git://github.com/etsy/statsd"
-  creates "#{node[:statsd][:tmp_dir]}/statsd"
-  cwd "#{node[:statsd][:tmp_dir]}"
+statsd_version = node[:statsd][:sha]
+
+git "#{node[:statsd][:tmp_dir]}/statsd" do
+  repository node[:statsd][:repo]
+  reference statsd_version
+  action :sync
+  notifies :run, "execute[build debian package]"
 end
 
 package "debhelper"
 
+# Fix the debian changelog file of the repo
+template "#{node[:statsd][:tmp_dir]}/statsd/debian/changelog" do
+  source "changelog.erb"
+end
+
 execute "build debian package" do
   command "dpkg-buildpackage -us -uc"
-  creates "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
   cwd "#{node[:statsd][:tmp_dir]}/statsd"
+  creates "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
 end
 
 dpkg_package "statsd" do
