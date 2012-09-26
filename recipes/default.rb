@@ -22,23 +22,31 @@ include_recipe "git"
 
 package "nodejs"
 
-execute "checkout statsd" do
-  command "git clone git://github.com/etsy/statsd"
-  creates "/tmp/statsd"
-  cwd "/tmp"
+statsd_version = node[:statsd][:sha]
+
+git "#{node[:statsd][:tmp_dir]}/statsd" do
+  repository node[:statsd][:repo]
+  reference statsd_version
+  action :sync
+  notifies :run, "execute[build debian package]"
 end
 
 package "debhelper"
 
+# Fix the debian changelog file of the repo
+template "#{node[:statsd][:tmp_dir]}/statsd/debian/changelog" do
+  source "changelog.erb"
+end
+
 execute "build debian package" do
   command "dpkg-buildpackage -us -uc"
-  creates "/tmp/statsd_0.0.3_all.deb"
-  cwd "/tmp/statsd"
+  cwd "#{node[:statsd][:tmp_dir]}/statsd"
+  creates "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
 end
 
 dpkg_package "statsd" do
   action :install
-  source "/tmp/statsd_0.0.3_all.deb"
+  source "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
 end
 
 template "/etc/statsd/rdioConfig.js" do
@@ -63,7 +71,7 @@ cookbook_file "/etc/init/statsd.conf" do
   mode 0644
 end
 
-user "statsd" do
+user node[:statsd][:user] do
   comment "statsd"
   system true
   shell "/bin/false"
