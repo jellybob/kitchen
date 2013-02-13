@@ -20,7 +20,7 @@
 include_recipe "build-essential"
 include_recipe "git"
 
-package "nodejs"
+include_recipe "nodejs"
 
 statsd_version = node[:statsd][:sha]
 
