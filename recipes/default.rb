@@ -90,7 +90,7 @@ if platform?(%w{ redhat centos fedora })
    execute "build rpm package" do
      command "fpm -s dir -t rpm -n statsd -a noarch -v #{node[:statsd][:package_version]} ."
      cwd "#{node[:statsd][:tmp_dir]}/build"
-     creates "#{node[:statsd][:tmp_dir]}/statsd-#{node[:statsd][:package_version]}-1.noarch.rpm"
+     creates "#{node[:statsd][:tmp_dir]}/build/statsd-#{node[:statsd][:package_version]}-1.noarch.rpm"
    end
 
    rpm_package "statsd" do
