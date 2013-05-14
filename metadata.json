@@ -1,12 +1,13 @@
 {
   "name": "statsd",
   "description": "Installs/Configures statsd",
-  "long_description": "= DESCRIPTION:\n\nInstalls and configures Statsd (http://github.com/etsy/statsd)\n\n= REQUIREMENTS:\n\nUbuntu 11.04 (Natty)\n\n= ATTRIBUTES:\n\n= USAGE:\n\n= CAVEATS:\n\n",
+  "long_description": "= DESCRIPTION:\n\nInstalls and configures Statsd (http://github.com/etsy/statsd)\n\n= REQUIREMENTS:\n\nUbuntu 11.04 (Natty)\n\n Redhat Enterprise 6 \n\n Fedora or Centos\n\n= ATTRIBUTES:\n\n= USAGE:\n\n= CAVEATS:\n\n",
   "maintainer": "Jon Wood",
   "maintainer_email": "jon@blankpad.net",
   "license": "Apache 2.0",
   "platforms": {
-    "ubuntu": ">= 0.0.0"
+    "ubuntu": ">= 0.0.0",
+    "redhat": ">= 6"
   },
   "dependencies": {
     "build-essential": ">= 0.0.0",
