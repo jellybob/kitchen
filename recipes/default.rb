@@ -17,36 +17,89 @@
 # limitations under the License.
 #
 
-include_recipe "build-essential"
-include_recipe "git"
+
 
 include_recipe "nodejs"
 
 statsd_version = node[:statsd][:sha]
 
-git "#{node[:statsd][:tmp_dir]}/statsd" do
-  repository node[:statsd][:repo]
-  reference statsd_version
-  action :sync
-  notifies :run, "execute[build debian package]"
+
+if platform?(%w{ debian })
+
+  include_recipe "build-essential"
+  include_recipe "git"
+
+  git "#{node[:statsd][:tmp_dir]}/statsd" do
+    repository node[:statsd][:repo]
+    reference statsd_version
+    action :sync
+    notifies :run, "execute[build debian package]"
+  end
+
+  package "debhelper"
+
+  # Fix the debian changelog file of the repo
+  template "#{node[:statsd][:tmp_dir]}/statsd/debian/changelog" do
+    source "changelog.erb"
+  end
+
+  execute "build debian package" do
+    command "dpkg-buildpackage -us -uc"
+    cwd "#{node[:statsd][:tmp_dir]}/statsd"
+    creates "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
+  end
+
+  dpkg_package "statsd" do
+    action :install
+    source "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
+  end
 end
 
-package "debhelper"
+if platform?(%w{ redhat centos fedora })
 
-# Fix the debian changelog file of the repo
-template "#{node[:statsd][:tmp_dir]}/statsd/debian/changelog" do
-  source "changelog.erb"
-end
+#  chef_gem 'fpm'
+  gem_package "fpm" do
+	  gem_binary "/opt/chef/embedded/bin/gem"
+	    action :nothing
+	      version "0.4.33"
+  end.run_action(:install)
 
-execute "build debian package" do
-  command "dpkg-buildpackage -us -uc"
-  cwd "#{node[:statsd][:tmp_dir]}/statsd"
-  creates "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
-end
+  Gem.clear_paths
 
-dpkg_package "statsd" do
-  action :install
-  source "#{node[:statsd][:tmp_dir]}/statsd_#{node[:statsd][:package_version]}_all.deb"
+  package "rpmdevtools" do
+    action :install
+  end
+
+  directory "#{node[:statsd][:tmp_dir]}/build/usr/share/statsd/scripts" do
+	  recursive true
+  end
+
+  git "#{node[:statsd][:tmp_dir]}/build/usr/share/statsd" do
+     repository node[:statsd][:repo]
+     reference statsd_version
+     action :sync
+     notifies :run, "execute[build rpm package]"
+  end
+
+
+   # Fix the debian changelog file of the repo
+#   template "#{node[:statsd][:tmp_dir]}/statsd/debian/changelog" do
+#    source "changelog.erb"
+#   end
+
+   execute "build rpm package" do
+     command "fpm -s dir -t rpm -n statsd -a noarch -v #{node[:statsd][:package_version]} ."
+     cwd "#{node[:statsd][:tmp_dir]}/build"
+     creates "#{node[:statsd][:tmp_dir]}/build/statsd-#{node[:statsd][:package_version]}-1.noarch.rpm"
+   end
+
+   rpm_package "statsd" do
+     action :install
+     source "#{node[:statsd][:tmp_dir]}/build/statsd-#{node[:statsd][:package_version]}-1.noarch.rpm"
+   end
+  
+   directory "/etc/statsd" do
+   end
 end
 
 template "/etc/statsd/rdioConfig.js" do
@@ -75,8 +128,10 @@ user node[:statsd][:user] do
   comment "statsd"
   system true
   shell "/bin/false"
+  home "/var/log/statsd"
 end
 
 service "statsd" do
+  provider Chef::Provider::Service::Upstart
   action [ :enable, :start ]
 end
